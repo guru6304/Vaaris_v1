@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Modal } from '../common/Modal';
 import { useApp } from '../../context/AppContext';
 import type { Asset, AssetCategory } from '../../types';
@@ -21,24 +21,24 @@ export const EditAssetModal: React.FC<EditAssetModalProps> = ({
 }) => {
   const { updateAsset, archiveAsset } = useApp();
 
+  const [prevAssetId, setPrevAssetId] = useState<string | null>(null);
   const [formData, setFormData] = useState<Partial<Asset>>({});
   const [showConfirmArchive, setShowConfirmArchive] = useState(false);
 
-  useEffect(() => {
-    if (asset) {
-      setFormData({
-        name: asset.name,
-        category: asset.category,
-        institution: asset.institution,
-        accountNumberMasked: asset.accountNumberMasked,
-        value: asset.value,
-        insuranceCoverage: asset.insuranceCoverage || 0,
-        notes: asset.notes || '',
-        source: asset.source
-      });
-      setShowConfirmArchive(false);
-    }
-  }, [asset]);
+  if (asset && asset.id !== prevAssetId) {
+    setPrevAssetId(asset.id);
+    setFormData({
+      name: asset.name,
+      category: asset.category,
+      institution: asset.institution,
+      accountNumberMasked: asset.accountNumberMasked,
+      value: asset.value,
+      insuranceCoverage: asset.insuranceCoverage || 0,
+      notes: asset.notes || '',
+      source: asset.source,
+    });
+    setShowConfirmArchive(false);
+  }
 
   if (!asset) return null;
 

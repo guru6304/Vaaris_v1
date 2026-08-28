@@ -45,8 +45,9 @@ model User {
   email            String         @unique
   phoneNumber      String?        @unique
   fullName         String
-  passwordHash     String?
-  isEmailVerified  Boolean        @default(false)
+  passwordHash       String?
+  hashedRefreshToken String?
+  isEmailVerified    Boolean        @default(false)
   isPhoneVerified  Boolean        @default(false)
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
@@ -66,10 +67,14 @@ model Family {
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
 
-  createdBy   User           @relation("FamilyCreator", fields: [createdById], references: [id], onDelete: Cascade)
-  members     FamilyMember[]
-  accessList  FamilyAccess[]
-  auditLogs   AuditLog[]
+  createdBy        User              @relation("FamilyCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  members          FamilyMember[]
+  accessList       FamilyAccess[]
+  auditLogs        AuditLog[]
+  financialRecords FinancialRecord[]
+  documents        VaultDocument[]
+  continuityPlan   ContinuityPlan?
+  emergencyCases   EmergencyCase[]
 
   @@map("families")
 }
@@ -110,6 +115,133 @@ model FamilyAccess {
 
   @@unique([familyId, userId])
   @@map("family_access")
+}
+
+model FinancialRecord {
+  id                  String          @id @default(uuid())
+  familyId            String
+  name                String
+  category            String          // e.g. bank_accounts, mutual_funds, insurance, loans_liabilities
+  institution         String
+  accountNumberMasked String?
+  value               Float           @default(0) // Balance or valuation (negative or categorized as liability)
+  isInsurance         Boolean         @default(false)
+  insuranceCoverage   Float?          // Sum assured (strictly separated from cash asset value)
+  nomineeStatus       String          @default("Not Added") // Verified, Needs Review, Action Required, Not Added
+  source              String          @default("User provided")
+  notes               String?
+  actionRequired      String?
+  lastReviewedDate    DateTime?       @default(now())
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  family              Family          @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  nominees            Nominee[]
+  linkedDocuments     VaultDocument[]
+
+  @@index([familyId])
+  @@map("financial_records")
+}
+
+model Nominee {
+  id                String          @id @default(uuid())
+  financialRecordId String
+  name              String
+  relationship      String
+  sharePercentage   Float           @default(100)
+  verifiedAt        DateTime?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  financialRecord   FinancialRecord @relation(fields: [financialRecordId], references: [id], onDelete: Cascade)
+
+  @@index([financialRecordId])
+  @@map("nominees")
+}
+
+model VaultDocument {
+  id              String           @id @default(uuid())
+  familyId        String
+  name            String
+  category        String           // e.g. Identity Documents, Financial Documents, Insurance, Property
+  linkedAssetId   String?
+  linkedAssetName String?
+  fileSizeBytes   Int              @default(0)
+  status          String           @default("Document Processed") // Document Processed, AI Processing, Needs Verification
+  storagePath     String?
+  extractedData   Json?
+  uploadDate      DateTime         @default(now())
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  family          Family           @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  linkedAsset     FinancialRecord? @relation(fields: [linkedAssetId], references: [id], onDelete: SetNull)
+
+  @@index([familyId])
+  @@map("vault_documents")
+}
+
+model ContinuityPlan {
+  id                   String   @id @default(uuid())
+  familyId             String   @unique
+  completionPercentage Int      @default(0)
+  emergencyContacts    Json?
+  responsibilities     Json?
+  financialIntents     Json?
+  instructions         Json?
+  emergencyAccessTiers Json?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  family               Family   @relation(fields: [familyId], references: [id], onDelete: Cascade)
+
+  @@map("continuity_plans")
+}
+
+model EmergencyCase {
+  id               String   @id @default(uuid())
+  familyId         String
+  deceasedName     String
+  relationship     String
+  status           String   @default("Active") // Active, Under Review, Resolved
+  dateReported     DateTime @default(now())
+  knownAssetsValue Float    @default(0)
+  milestones       Json?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  family           Family   @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  claims           Claim[]
+
+  @@index([familyId])
+  @@map("emergency_cases")
+}
+
+model Claim {
+  id                     String        @id @default(uuid())
+  caseId                 String
+  familyId               String
+  institution            String
+  assetType              String
+  assetName              String
+  claimantName           String
+  estimatedAmount        Float         @default(0)
+  isInsurance            Boolean       @default(false)
+  status                 String        @default("Documents Submitted")
+  progressPercentage     Int           @default(20)
+  nextStep               String
+  steps                  Json?
+  missingDocumentNotice  Json?
+  assignedProfessionalId String?
+  activityLog            Json?
+  createdAt              DateTime      @default(now())
+  updatedAt              DateTime      @updatedAt
+
+  emergencyCase          EmergencyCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  @@index([caseId])
+  @@index([familyId])
+  @@map("claims")
 }
 
 model AuditLog {

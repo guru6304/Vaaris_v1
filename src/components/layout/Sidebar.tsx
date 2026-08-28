@@ -19,7 +19,15 @@ import { useApp } from '../../context/AppContext';
 import type { RouteType } from '../../types';
 
 export const Sidebar: React.FC = () => {
-  const { currentRoute, navigate, resetDemo, readinessScore, emergencyCase } = useApp();
+  const {
+    currentRoute,
+    navigate,
+    resetDemo,
+    readinessScore,
+    emergencyCase,
+    currentUser,
+    openAuthModal,
+  } = useApp();
 
   const prepareNavItems: { route: RouteType; label: string; icon: React.ComponentType<{ className?: string }>; badge?: string }[] = [
     { route: 'family', label: 'My Family', icon: Users },
@@ -206,15 +214,29 @@ export const Sidebar: React.FC = () => {
       {/* Footer Profile & Reset Demo */}
       <div className="p-4 border-t border-slate-800/80 bg-slate-950/60 space-y-3">
         {/* User Card */}
-        <div className="flex items-center gap-3 px-2 py-1.5 rounded-lg bg-slate-900/80 border border-slate-800/60">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-teal-600 to-emerald-400 flex items-center justify-center text-white font-bold text-xs shadow-inner">
-            AS
+        {currentUser ? (
+          <div className="flex items-center gap-3 px-2 py-1.5 rounded-lg bg-slate-900/80 border border-teal-500/30">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-teal-600 to-emerald-400 flex items-center justify-center text-white font-bold text-xs shadow-inner">
+              {currentUser.fullName
+                .split(' ')
+                .map((n) => n[0])
+                .join('')
+                .slice(0, 2)
+                .toUpperCase()}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-semibold text-white truncate">{currentUser.fullName}</p>
+              <p className="text-[10px] text-teal-400 truncate">Cloud Verified • Active</p>
+            </div>
           </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-xs font-semibold text-white truncate">Arjun Sharma</p>
-            <p className="text-[10px] text-slate-400 truncate">Family Administrator</p>
-          </div>
-        </div>
+        ) : (
+          <button
+            onClick={openAuthModal}
+            className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-teal-500/10 hover:bg-teal-500/20 text-teal-300 border border-teal-500/30 text-xs font-semibold transition-all cursor-pointer"
+          >
+            <span>Sign In to Cloud DB</span>
+          </button>
+        )}
 
         {/* Reset Demo Button */}
         <button

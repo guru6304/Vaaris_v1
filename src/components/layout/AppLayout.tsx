@@ -13,6 +13,7 @@ import { ReviewNomineeModal } from '../modals/ReviewNomineeModal';
 import { DocumentPreviewModal } from '../modals/DocumentPreviewModal';
 import { ContactProfessionalModal } from '../modals/ContactProfessionalModal';
 import { StartEmergencyCaseModal } from '../modals/StartEmergencyCaseModal';
+import { AuthModal } from '../modals/AuthModal';
 import { useApp } from '../../context/AppContext';
 
 export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -83,6 +84,7 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
         isOpen={activeModal === 'startEmergencyCase'}
         onClose={closeModal}
       />
+      <AuthModal />
 
       {/* Floating Notifications */}
       <ToastContainer />

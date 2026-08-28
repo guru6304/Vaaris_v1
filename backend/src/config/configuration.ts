@@ -30,7 +30,7 @@ export default (): AppConfig => ({
     url: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/vaaris_db?schema=public',
   },
   cors: {
-    origin: (process.env.CORS_ORIGIN || 'http://localhost:5173,http://localhost:3000')
+    origin: (process.env.CORS_ORIGIN || 'http://localhost:5173,http://localhost:5174,http://localhost:3000')
       .split(',')
       .map((origin) => origin.trim()),
   },

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Modal } from '../common/Modal';
 import { useApp } from '../../context/AppContext';
 import type { Asset, NomineeStatus, AssetNominee } from '../../types';
@@ -26,27 +26,27 @@ export const ReviewNomineeModal: React.FC<ReviewNomineeModalProps> = ({
 }) => {
   const { updateNomineeStatus, familyMembers } = useApp();
 
+  const [prevAssetId, setPrevAssetId] = useState<string | null>(null);
   const [status, setStatus] = useState<NomineeStatus>('Verified');
   const [nomineesList, setNomineesList] = useState<AssetNominee[]>([]);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (asset) {
-      setStatus(asset.nomineeStatus === 'Action Required' || asset.nomineeStatus === 'Needs Review' ? 'Verified' : asset.nomineeStatus);
-      if (asset.nominees && asset.nominees.length > 0) {
-        setNomineesList([...asset.nominees]);
-      } else {
-        setNomineesList([
-          {
-            name: familyMembers[0]?.name || 'Priya Sharma',
-            relationship: familyMembers[0]?.relationship || 'Spouse',
-            sharePercentage: 100
-          }
-        ]);
-      }
-      setErrorMsg(null);
+  if (asset && asset.id !== prevAssetId) {
+    setPrevAssetId(asset.id);
+    setStatus(asset.nomineeStatus === 'Action Required' || asset.nomineeStatus === 'Needs Review' ? 'Verified' : asset.nomineeStatus);
+    if (asset.nominees && asset.nominees.length > 0) {
+      setNomineesList([...asset.nominees]);
+    } else {
+      setNomineesList([
+        {
+          name: familyMembers[0]?.name || 'Priya Sharma',
+          relationship: familyMembers[0]?.relationship || 'Spouse',
+          sharePercentage: 100,
+        },
+      ]);
     }
-  }, [asset, familyMembers]);
+    setErrorMsg(null);
+  }
 
   if (!asset) return null;
 

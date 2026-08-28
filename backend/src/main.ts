@@ -22,7 +22,23 @@ async function bootstrap() {
 
   // CORS Configuration
   app.enableCors({
-    origin: corsOrigins,
+    origin: (origin, callback) => {
+      // Allow requests with no origin (mobile apps, curl, server-to-server)
+      if (!origin) return callback(null, true);
+
+      // In non-production, allow any localhost or 127.0.0.1 port (e.g. 5173, 5174, 5175)
+      if (nodeEnv !== 'production') {
+        if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
+          return callback(null, true);
+        }
+      }
+
+      if (corsOrigins.includes(origin) || corsOrigins.includes('*')) {
+        return callback(null, true);
+      }
+
+      return callback(null, false);
+    },
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'x-request-id'],
     credentials: true,
