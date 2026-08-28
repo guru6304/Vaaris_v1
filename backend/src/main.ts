@@ -102,7 +102,7 @@ async function bootstrap() {
     customSiteTitle: 'VAARIS API Documentation',
   });
 
-  await app.listen(port);
+  await app.listen(port, '0.0.0.0');
 
   logger.log(`====================================================`);
   logger.log(`VAARIS Backend Foundation running successfully!`);
