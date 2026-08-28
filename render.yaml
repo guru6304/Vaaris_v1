@@ -38,5 +38,4 @@ databases:
   - name: vaaris-db
     plan: free
     databaseName: vaaris_db
-    user: postgres
     postgresMajorVersion: '16'
