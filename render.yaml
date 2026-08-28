@@ -2,7 +2,7 @@ services:
   # VAARIS Backend (NestJS + Prisma API)
   - type: web
     name: vaaris-backend
-    runtime: node
+    env: node
     rootDir: backend
     plan: free
     buildCommand: npm ci && npx prisma generate && npx prisma migrate deploy && npm run build
@@ -25,9 +25,8 @@ services:
   # VAARIS Frontend (React 19 + Vite SPA)
   - type: web
     name: vaaris-frontend
-    runtime: static
+    env: static
     rootDir: .
-    plan: free
     buildCommand: npm ci && npm run build
     staticPublishPath: ./dist
     routes:
@@ -40,3 +39,4 @@ databases:
     plan: free
     databaseName: vaaris_db
     user: postgres
+    postgresMajorVersion: '16'
