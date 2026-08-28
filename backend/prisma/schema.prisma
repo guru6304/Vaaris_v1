@@ -1,0 +1,133 @@
+// VAARIS Database Schema — PostgreSQL + Prisma
+// Core Architectural Principle: Family is the primary security & data boundary
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum FamilyRole {
+  PRIMARY_ADMIN
+  DECISION_MAKER
+  CONTINGENT_MEMBER
+  VIEWER
+  EMERGENCY_CONTACT
+}
+
+enum AccessStatus {
+  ACTIVE
+  PENDING_VERIFICATION
+  CONTINGENT_LOCKED
+  REVOKED
+}
+
+enum AuditAction {
+  USER_REGISTERED
+  USER_LOGIN
+  FAMILY_CREATED
+  MEMBER_ADDED
+  MEMBER_UPDATED
+  ACCESS_GRANTED
+  ACCESS_REVOKED
+  RECORD_CREATED
+  RECORD_UPDATED
+  DOCUMENT_UPLOADED
+  EMERGENCY_CASE_OPENED
+  CLAIM_STATUS_UPDATED
+}
+
+model User {
+  id               String         @id @default(uuid())
+  email            String         @unique
+  phoneNumber      String?        @unique
+  fullName         String
+  passwordHash     String?
+  isEmailVerified  Boolean        @default(false)
+  isPhoneVerified  Boolean        @default(false)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  createdFamilies  Family[]       @relation("FamilyCreator")
+  familyAccesses   FamilyAccess[]
+  familyMemberProfiles FamilyMember[]
+  auditLogs        AuditLog[]
+
+  @@map("users")
+}
+
+model Family {
+  id          String         @id @default(uuid())
+  name        String
+  createdById String
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  createdBy   User           @relation("FamilyCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  members     FamilyMember[]
+  accessList  FamilyAccess[]
+  auditLogs   AuditLog[]
+
+  @@map("families")
+}
+
+model FamilyMember {
+  id                 String     @id @default(uuid())
+  familyId           String
+  userId             String?
+  name               String
+  relationship       String
+  age                Int?
+  role               FamilyRole @default(DECISION_MAKER)
+  phone              String?
+  email              String?
+  isEmergencyContact Boolean    @default(false)
+  isPrimaryContact   Boolean    @default(false)
+  notes              String?
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+
+  family             Family     @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  user               User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("family_members")
+}
+
+model FamilyAccess {
+  id         String       @id @default(uuid())
+  familyId   String
+  userId     String
+  role       FamilyRole   @default(VIEWER)
+  status     AccessStatus @default(PENDING_VERIFICATION)
+  grantedAt  DateTime     @default(now())
+  revokedAt  DateTime?
+
+  family     Family       @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([familyId, userId])
+  @@map("family_access")
+}
+
+model AuditLog {
+  id           String      @id @default(uuid())
+  familyId     String?
+  userId       String?
+  action       AuditAction
+  resourceType String
+  resourceId   String?
+  ipAddress    String?
+  userAgent    String?
+  metadata     Json?
+  createdAt    DateTime    @default(now())
+
+  family       Family?     @relation(fields: [familyId], references: [id], onDelete: SetNull)
+  user         User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([familyId])
+  @@index([userId])
+  @@map("audit_logs")
+}
